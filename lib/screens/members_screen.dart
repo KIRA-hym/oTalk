@@ -352,6 +352,8 @@ class _MembersScreenState extends State<MembersScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
+          final appUser = Provider.of<AppUser>(context, listen: false);
+          final isAdmin = appUser.role == 'super_admin' || appUser.role == 'admin';
           if (!isAdmin) {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('권한이 없습니다.')));
             return;
