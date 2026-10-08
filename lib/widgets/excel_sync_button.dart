@@ -56,6 +56,7 @@ class _ExcelSyncButtonState extends State<ExcelSyncButton> {
             'id': docRef.id,
             'nickname': nickname,
             'gender': '',
+            'memo': '',
             'joinDate': Timestamp.now(), // Use proper Timestamp!
             'manualAttendance': manualAttendance,
           });

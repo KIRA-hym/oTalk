@@ -5,19 +5,20 @@ class MemberRepository {
   final CollectionReference _membersCollection = FirebaseFirestore.instance.collection('members');
 
   // 멤버 추가
-  Future<Member> addMember(String nickname, String gender) async {
+  Future<Member> addMember(String nickname, String gender, {String memo = ''}) async {
     final docRef = _membersCollection.doc();
     final newMember = Member(
       id: docRef.id,
       nickname: nickname,
       gender: gender,
+      memo: memo,
       joinDate: DateTime.now(),
     );
     await docRef.set(newMember.toFirestore());
     return newMember;
   }
 
-  // 전체 멤버 목록 가져오기 (이름순 정렬)
+  // 전체 멤버 목록 가져오기
   Stream<List<Member>> streamAllMembers() {
     return _membersCollection.orderBy('nickname').snapshots().map((snapshot) {
       return snapshot.docs.map((doc) => Member.fromFirestore(doc)).toList();

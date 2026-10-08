@@ -4,6 +4,7 @@ class Member {
   final String id;
   final String nickname;
   final String gender; // e.g., '남' 또는 '여'
+  final String memo;
   final DateTime joinDate;
   final Map<String, int> manualAttendance; // key: 'YYYY-MM', value: count
 
@@ -11,6 +12,7 @@ class Member {
     required this.id,
     required this.nickname,
     required this.gender,
+    this.memo = '',
     required this.joinDate,
     this.manualAttendance = const {},
   });
@@ -21,6 +23,7 @@ class Member {
       id: doc.id,
       nickname: data['nickname'] ?? '',
       gender: data['gender'] ?? '',
+      memo: data['memo'] ?? '',
       joinDate: data['joinDate'] is Timestamp 
           ? (data['joinDate'] as Timestamp).toDate() 
           : (data['joinDate'] is String ? DateTime.parse(data['joinDate']) : DateTime.now()),
@@ -34,14 +37,15 @@ class Member {
     return {
       'nickname': nickname,
       'gender': gender,
+      'memo': memo,
       'joinDate': Timestamp.fromDate(joinDate),
       'manualAttendance': manualAttendance,
     };
   }
 
-  // 검색 시 자동완성 등에서 보여줄 라벨 포맷
-  String get displayName => '$nickname ($gender)';
+  // 검색이나 자동완성 등에서 보여줄 라벨 포맷
+  String get displayName => memo.isNotEmpty ? '$nickname ($memo)' : nickname;
   
-  // 모임 등록/조회 시 칩에 보여줄 한 줄 표기 포맷
-  String get fullDisplayText => '$nickname $gender'.trim();
+  // 모임 등록/조회 시 칩에 보여줄 한 줄짜리 포맷
+  String get fullDisplayText => memo.isNotEmpty ? '$nickname ($memo)' : nickname;
 }

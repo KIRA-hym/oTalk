@@ -16,6 +16,7 @@ class MemberFormDialog extends StatefulWidget {
 class _MemberFormDialogState extends State<MemberFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nicknameController;
+  late TextEditingController _memoController;
   late String _gender;
   late DateTime _joinDate;
   bool _isLoading = false;
@@ -26,6 +27,7 @@ class _MemberFormDialogState extends State<MemberFormDialog> {
   void initState() {
     super.initState();
     _nicknameController = TextEditingController(text: isEdit ? widget.member!.nickname : '');
+    _memoController = TextEditingController(text: isEdit ? widget.member!.memo : '');
     _gender = (isEdit && (widget.member!.gender == '남' || widget.member!.gender == '여'))
         ? widget.member!.gender
         : '남';
@@ -35,6 +37,7 @@ class _MemberFormDialogState extends State<MemberFormDialog> {
   @override
   void dispose() {
     _nicknameController.dispose();
+    _memoController.dispose();
     super.dispose();
   }
 
@@ -44,6 +47,7 @@ class _MemberFormDialogState extends State<MemberFormDialog> {
     setState(() => _isLoading = true);
 
     final nickname = _nicknameController.text.trim();
+    final memo = _memoController.text.trim();
     final repo = Provider.of<MemberRepository>(context, listen: false);
 
     try {
@@ -52,6 +56,7 @@ class _MemberFormDialogState extends State<MemberFormDialog> {
           id: widget.member!.id,
           nickname: nickname,
           gender: _gender,
+          memo: memo,
           joinDate: _joinDate,
           manualAttendance: widget.member!.manualAttendance,
         );
@@ -61,7 +66,7 @@ class _MemberFormDialogState extends State<MemberFormDialog> {
           Navigator.pop(context, updatedMember);
         }
       } else {
-        final newMember = await repo.addMember(nickname, _gender);
+        final newMember = await repo.addMember(nickname, _gender, memo: memo);
         if (mounted) {
           setState(() => _isLoading = false);
           Navigator.pop(context, newMember); // return the new member
@@ -94,6 +99,11 @@ class _MemberFormDialogState extends State<MemberFormDialog> {
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _memoController,
+                decoration: const InputDecoration(labelText: '메모 (선택)', hintText: '예: 직장동료'),
               ),
               const SizedBox(height: 24),
               Row(

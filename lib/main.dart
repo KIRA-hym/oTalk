@@ -52,6 +52,7 @@ Future<void> _runOneOffSync() async {
           'id': docRef.id,
           'nickname': nickname,
           'gender': '',
+          'memo': '',
           'joinDate': DateTime.now().toIso8601String(),
           'manualAttendance': manualAttendance,
         });

@@ -76,6 +76,7 @@ class _MembersScreenState extends State<MembersScreen> {
             'id': docRef.id,
             'nickname': nickname,
             'gender': '',
+            'memo': '',
             'joinDate': Timestamp.now(),
             'manualAttendance': manualAttendance,
           });
@@ -169,6 +170,7 @@ class _MembersScreenState extends State<MembersScreen> {
                       id: member.id,
                       nickname: member.nickname,
                       gender: member.gender,
+                      memo: member.memo,
                       joinDate: member.joinDate,
                       manualAttendance: updatedManual,
                     );
@@ -189,6 +191,9 @@ class _MembersScreenState extends State<MembersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appUser = Provider.of<AppUser>(context);
+    final isAdmin = appUser.role == 'super_admin' || appUser.role == 'admin';
+
     return Scaffold(
       body: StreamBuilder<List<Meeting>>(
         stream: _meetingsStream,
@@ -294,10 +299,14 @@ class _MembersScreenState extends State<MembersScreen> {
                                       });
                                     },
                                     onLongPress: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (ctx) => MemberFormDialog(member: member),
-                                      );
+                                      if (isAdmin) {
+                                        showDialog(
+                                          context: context,
+                                          builder: (ctx) => MemberFormDialog(member: member),
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('수정 권한이 없습니다.')));
+                                      }
                                     },
                                     child: Padding(
                                       padding: const EdgeInsets.all(16.0),
@@ -328,7 +337,7 @@ class _MembersScreenState extends State<MembersScreen> {
                             const VerticalDivider(width: 1, color: Colors.grey),
                             Expanded(
                               flex: 3,
-                              child: _buildDetailPane(selectedMember, meetings),
+                              child: _buildDetailPane(selectedMember, meetings, isAdmin),
                             ),
                           ]
                         ],
@@ -371,7 +380,7 @@ class _MembersScreenState extends State<MembersScreen> {
     );
   }
 
-  Widget _buildDetailPane(Member member, List<Meeting> meetings) {
+  Widget _buildDetailPane(Member member, List<Meeting> meetings, bool isAdmin) {
     // 1. Calculate automated attendance per month
     final Map<String, int> monthlyStats = {};
     for (var m in meetings) {
@@ -406,18 +415,20 @@ class _MembersScreenState extends State<MembersScreen> {
               ),
               Row(
                 children: [
-                  IconButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (ctx) => MemberFormDialog(member: member),
-                      );
-                    },
-                    icon: const Icon(Icons.edit, color: Colors.grey, size: 20),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                  const SizedBox(width: 8),
+                  if (isAdmin) ...[
+                    IconButton(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => MemberFormDialog(member: member),
+                        );
+                      },
+                      icon: const Icon(Icons.edit, color: Colors.grey, size: 20),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
@@ -446,17 +457,18 @@ class _MembersScreenState extends State<MembersScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: () => _showManualAttendanceDialog(context, member),
-                    icon: const Icon(Icons.add, size: 16, color: Colors.amberAccent),
-                    label: const Text('참여추가', style: TextStyle(color: Colors.amberAccent)),
+              if (isAdmin)
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () => _showManualAttendanceDialog(context, member),
+                      icon: const Icon(Icons.add, size: 16, color: Colors.amberAccent),
+                      label: const Text('참여추가', style: TextStyle(color: Colors.amberAccent)),
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
           const Divider(color: Colors.grey),
