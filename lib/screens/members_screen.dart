@@ -204,146 +204,151 @@ class _MembersScreenState extends State<MembersScreen> {
           return StreamBuilder<List<Member>>(
             stream: _membersStream,
             builder: (context, memberSnapshot) {
-              if (memberSnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(color: Colors.amber));
-              }
-
-              final allMembers = memberSnapshot.data ?? [];
-              if (allMembers.isEmpty) {
-                return const Center(child: Text('등록된 멤버가 없습니다.'));
-              }
-
-              Map<String, int> memberCounts = {};
-              for (var member in allMembers) {
-                int autoCount = meetings.where((m) => m.uniqueAttendees.contains(member.id) || m.uniqueAttendees.contains(member.nickname)).length;
-                int manualCount = member.manualAttendance.values.fold(0, (sum, val) => sum + val);
-                memberCounts[member.id] = autoCount + manualCount;
-              }
-
-              final filteredMembers = allMembers.where((m) {
-                return m.displayName.toLowerCase().contains(_searchQuery.toLowerCase());
-              }).toList();
-              
-              filteredMembers.sort((a, b) => memberCounts[b.id]!.compareTo(memberCounts[a.id]!));
-
-              Member? selectedMember;
-              if (_selectedMemberId != null) {
-                try {
-                  selectedMember = allMembers.firstWhere((m) => m.id == _selectedMemberId);
-                } catch (e) {
-                  selectedMember = null;
+              try {
+                if (memberSnapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator(color: Colors.amber));
                 }
-              }
-              
-              bool isTwoPane = selectedMember != null;
 
-              return Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: '멤버 검색 (이름, 년생, 지역 등)',
-                        prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                        suffixIcon: _searchQuery.isNotEmpty 
-                          ? IconButton(
-                              icon: const Icon(Icons.clear, color: Colors.grey),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _searchQuery = '');
-                              },
-                            )
-                          : null,
-                        filled: true,
-                        fillColor: Theme.of(context).cardColor,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide.none,
+                final allMembers = memberSnapshot.data ?? [];
+                if (allMembers.isEmpty) {
+                  return const Center(child: Text('등록된 멤버가 없습니다.'));
+                }
+
+                Map<String, int> memberCounts = {};
+                for (var member in allMembers) {
+                  int autoCount = meetings.where((m) => m.uniqueAttendees.contains(member.id) || m.uniqueAttendees.contains(member.nickname)).length;
+                  int manualCount = member.manualAttendance.values.fold(0, (sum, val) => sum + val);
+                  memberCounts[member.id] = autoCount + manualCount;
+                }
+
+                final filteredMembers = allMembers.where((m) {
+                  return m.displayName.toLowerCase().contains(_searchQuery.toLowerCase());
+                }).toList();
+                
+                filteredMembers.sort((a, b) => memberCounts[b.id]!.compareTo(memberCounts[a.id]!));
+
+                Member? selectedMember;
+                if (_selectedMemberId != null) {
+                  try {
+                    selectedMember = allMembers.firstWhere((m) => m.id == _selectedMemberId);
+                  } catch (e) {
+                    selectedMember = null;
+                  }
+                }
+                
+                bool isTwoPane = selectedMember != null;
+
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: '멤버 검색 (이름, 년생, 지역 등)',
+                          prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                          suffixIcon: _searchQuery.isNotEmpty 
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, color: Colors.grey),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() => _searchQuery = '');
+                                },
+                              )
+                            : null,
+                          filled: true,
+                          fillColor: Theme.of(context).cardColor,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
                         ),
+                        onChanged: (val) => setState(() => _searchQuery = val),
                       ),
-                      onChanged: (val) => setState(() => _searchQuery = val),
                     ),
-                  ),
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Left Pane: Member List
-                        Expanded(
-                          flex: 2,
-                          child: ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: filteredMembers.length,
-                            itemBuilder: (context, index) {
-                              final member = filteredMembers[index];
-                              final isSelected = member.id == _selectedMemberId;
+                    Expanded(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Left Pane: Member List
+                          Expanded(
+                            flex: 2,
+                            child: ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: filteredMembers.length,
+                              itemBuilder: (context, index) {
+                                final member = filteredMembers[index];
+                                final isSelected = member.id == _selectedMemberId;
 
-                              int autoCount = meetings.where((m) => 
-                                  m.uniqueAttendees.contains(member.id) || m.uniqueAttendees.contains(member.nickname)
-                              ).length;
-                              int manualCount = member.manualAttendance.values.fold(0, (sum, val) => sum + val);
-                              int totalCount = autoCount + manualCount;
-
-                              return Card(
-                                color: isSelected ? Colors.amber.withOpacity(0.2) : null,
-                                shape: RoundedRectangleBorder(
-                                  side: isSelected ? const BorderSide(color: Colors.amber, width: 2) : BorderSide.none,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: InkWell(
-                                  onTap: () {
-                                    setState(() {
-                                      if (_selectedMemberId == member.id) {
-                                        _selectedMemberId = null;
-                                      } else {
-                                        _selectedMemberId = member.id;
-                                      }
-                                    });
-                                  },
-                                  onLongPress: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (ctx) => MemberEditDialog(member: member),
-                                    );
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            isTwoPane ? member.nickname : member.fullDisplayText,
-                                            style: TextStyle(
-                                              fontSize: 16, 
-                                              fontWeight: FontWeight.bold,
-                                              color: isSelected ? Colors.amber : Theme.of(context).textTheme.bodyMedium?.color
+                                return Card(
+                                  color: isSelected ? Colors.amber.withOpacity(0.2) : null,
+                                  shape: RoundedRectangleBorder(
+                                    side: isSelected ? const BorderSide(color: Colors.amber, width: 2) : BorderSide.none,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        if (_selectedMemberId == member.id) {
+                                          _selectedMemberId = null;
+                                        } else {
+                                          _selectedMemberId = member.id;
+                                        }
+                                      });
+                                    },
+                                    onLongPress: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (ctx) => MemberEditDialog(member: member),
+                                      );
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              isTwoPane ? member.nickname : member.fullDisplayText,
+                                              style: TextStyle(
+                                                fontSize: 16, 
+                                                fontWeight: FontWeight.bold,
+                                                color: isSelected ? Colors.amber : Theme.of(context).textTheme.bodyMedium?.color
+                                              ),
+                                              textAlign: TextAlign.center,
                                             ),
-                                            textAlign: TextAlign.center,
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                              );
-                            },
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                        // Right Pane: Detail
-                        if (selectedMember != null) ...[
-                          const VerticalDivider(width: 1, color: Colors.grey),
-                          Expanded(
-                            flex: 3,
-                            child: _buildDetailPane(selectedMember, meetings),
-                          ),
-                        ]
-                      ],
+                          // Right Pane: Detail
+                          if (selectedMember != null) ...[
+                            const VerticalDivider(width: 1, color: Colors.grey),
+                            Expanded(
+                              flex: 3,
+                              child: _buildDetailPane(selectedMember, meetings),
+                            ),
+                          ]
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              } catch (e, stackTrace) {
+                return Center(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text('Error: \$e\n\$stackTrace', style: const TextStyle(color: Colors.red)),
                     ),
                   ),
-                ],
-              );
+                );
+              }
             },
           );
         },

@@ -45,7 +45,7 @@ class DefaultFirebaseOptions {
     appId: '1:56557221868:web:1ab9e451c0599bd967b2c9',
     messagingSenderId: '56557221868',
     projectId: 'otalk-app',
-    authDomain: 'binefa.web.app',
+    authDomain: 'otalk-app.firebaseapp.com',
     storageBucket: 'otalk-app.firebasestorage.app',
     measurementId: 'G-QRRS5SPRQY',
   );
@@ -81,7 +81,7 @@ class DefaultFirebaseOptions {
     appId: '1:56557221868:web:4da05afa3e32192367b2c9',
     messagingSenderId: '56557221868',
     projectId: 'otalk-app',
-    authDomain: 'binefa.web.app',
+    authDomain: 'otalk-app.firebaseapp.com',
     storageBucket: 'otalk-app.firebasestorage.app',
     measurementId: 'G-NYNG7SCFSB',
   );

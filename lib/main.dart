@@ -158,33 +158,43 @@ class AuthWrapper extends StatelessWidget {
           return const LoginScreen();
         }
 
-        // 로그인된 유저가 있다면 users 컬렉션 데이터 실시간 감지 (권한 및 상태)
+        // 로그인된 유저가 있다면 DB에 유저 정보가 있는지 확인/생성 후 stream 감지
         return Provider<AppUser?>(
           create: (_) => null, // Placeholder
           builder: (context, child) {
             final userRepo = Provider.of<UserRepository>(context, listen: false);
-            return StreamBuilder<AppUser?>(
-              stream: userRepo.streamUser(firebaseUser.uid),
-              builder: (context, userSnapshot) {
-                if (userSnapshot.connectionState == ConnectionState.waiting) {
+            
+            return FutureBuilder<AppUser?>(
+              future: userRepo.saveUserAfterLogin(firebaseUser),
+              builder: (context, saveSnapshot) {
+                if (saveSnapshot.connectionState == ConnectionState.waiting) {
                   return const Scaffold(
                     body: Center(child: CircularProgressIndicator(color: Colors.amber)),
                   );
                 }
 
-                final appUser = userSnapshot.data;
+                return StreamBuilder<AppUser?>(
+                  stream: userRepo.streamUser(firebaseUser.uid),
+                  builder: (context, userSnapshot) {
+                    if (userSnapshot.connectionState == ConnectionState.waiting) {
+                      return const Scaffold(
+                        body: Center(child: CircularProgressIndicator(color: Colors.amber)),
+                      );
+                    }
 
-                // Firestore에 유저 문서가 없으면 (로그인 직후 딜레이 등)
-                if (appUser == null) {
-                  return const Scaffold(
-                    body: Center(child: CircularProgressIndicator(color: Colors.amber)),
-                  );
-                }
+                    final appUser = userSnapshot.data;
 
-                // Provider로 하위 위젯들에 AppUser 제공
-                return Provider<AppUser>.value(
-                  value: appUser,
-                  child: _buildScreenByStatus(appUser),
+                    if (appUser == null) {
+                      return const Scaffold(
+                        body: Center(child: CircularProgressIndicator(color: Colors.amber)),
+                      );
+                    }
+
+                    return Provider<AppUser>.value(
+                      value: appUser,
+                      child: _buildScreenByStatus(appUser),
+                    );
+                  },
                 );
               },
             );

@@ -22,10 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final userRepo = Provider.of<UserRepository>(context, listen: false);
     final userCredential = await authRepo.signInWithGoogle();
 
-    if (userCredential != null && userCredential.user != null) {
-      // 로그인 성공 시 Firestore에 유저 정보 저장(최초 1회 등록 처리 등)
-      await userRepo.saveUserAfterLogin(userCredential.user!);
-    }
+    // _authWrapper handles saveUserAfterLogin
 
     if (mounted) {
       setState(() {
@@ -35,7 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (userCredential == null) {
         // 로그인 실패 또는 취소
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('로그인에 실패했거나 취소되었습니다.')),
+          const SnackBar(content: Text('로그인에 실패했거나 취소되었습니다. (v1.0.1)')),
         );
       }
     }
