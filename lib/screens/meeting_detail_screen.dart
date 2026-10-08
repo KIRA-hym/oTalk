@@ -453,7 +453,7 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                 const SizedBox(height: 4),
                 Wrap(
                   spacing: 8,
-                  runSpacing: -8,
+                  runSpacing: 8,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     ..._currentUniqueAttendees.map((id) => Chip(
@@ -592,35 +592,38 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                               ),
                             ),
                         ],
-                        const SizedBox(height: 12),
-                        const Text('참여 인원', style: TextStyle(fontSize: 14, color: Colors.grey)),
-                        Wrap(
-                          spacing: 8,
-                          children: [
-                            ...round.attendees.map((id) => Chip(
-                              label: Text(_memberDisplayMap[id] ?? id),
-                              onDeleted: canEdit ? () => _removeAttendeeFromRound(index, id) : null,
-                            )),
-                            if (canEdit)
-                              ActionChip(
-                                avatar: const Icon(Icons.add, size: 16, color: Colors.black),
-                                label: const Text('추가', style: TextStyle(color: Colors.black)),
-                                backgroundColor: Colors.amber,
-                                onPressed: () async {
-                                  final selectedMember = await showDialog<Member>(
-                                    context: context,
-                                    builder: (ctx) => MemberSelectionDialog(
-                                      alreadySelectedIds: round.attendees,
-                                      isAdmin: isAdmin,
-                                    ),
-                                  );
-                                  if (selectedMember != null) {
-                                    _addAttendeeToRound(index, selectedMember.id);
-                                  }
-                                },
-                              )
-                          ],
-                        ),
+                        if (_rounds.length > 1) ...[
+                          const SizedBox(height: 12),
+                          const Text('참여 인원', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              ...round.attendees.map((id) => Chip(
+                                label: Text(_memberDisplayMap[id] ?? id),
+                                onDeleted: canEdit ? () => _removeAttendeeFromRound(index, id) : null,
+                              )),
+                              if (canEdit)
+                                ActionChip(
+                                  avatar: const Icon(Icons.add, size: 16, color: Colors.black),
+                                  label: const Text('추가', style: TextStyle(color: Colors.black)),
+                                  backgroundColor: Colors.amber,
+                                  onPressed: () async {
+                                    final selectedMember = await showDialog<Member>(
+                                      context: context,
+                                      builder: (ctx) => MemberSelectionDialog(
+                                        alreadySelectedIds: round.attendees,
+                                        isAdmin: isAdmin,
+                                      ),
+                                    );
+                                    if (selectedMember != null) {
+                                      _addAttendeeToRound(index, selectedMember.id);
+                                    }
+                                  },
+                                )
+                            ],
+                          ),
+                        ],
                         if (round.totalCost > 0) ...[
                           const Divider(height: 24),
                           Row(
