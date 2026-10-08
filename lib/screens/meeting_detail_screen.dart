@@ -221,10 +221,11 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
       }
       
       buffer.writeln('$roundTitle 장소 : $locationStr');
-      final costStr = NumberFormat('#,###').format(round.totalCost);
-      final costPerPersonStr = NumberFormat('#,###').format(round.costPerPerson);
-      buffer.writeln('금액 : $costStr / ${round.attendees.length} = $costPerPersonStr');
-      
+      if (round.totalCost > 0) {
+        final costStr = NumberFormat('#,###').format(round.totalCost);
+        final costPerPersonStr = NumberFormat('#,###').format(round.costPerPerson);
+        buffer.writeln('금액 : $costStr / ${round.attendees.length} = $costPerPersonStr');
+      }
       final memberNicknames = round.attendees.map((id) => _memberNicknameMap[id] ?? id).toList();
       buffer.writeln('맴버 : ${memberNicknames.join(', ')}');
       
@@ -520,7 +521,12 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(_rounds.length == 1 ? '총 정산금액' : '${round.roundName} 금액', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.amber)),
+                            Text(
+                              (round.totalCost > 0 || canEdit)
+                                  ? (_rounds.length == 1 ? '총 정산금액' : '${round.roundName} 금액')
+                                  : (_rounds.length == 1 ? '참석자 명단' : '${round.roundName} 참석자'),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.amber),
+                            ),
                             if (index > 0 && canEdit)
                               IconButton(
                                 icon: const Icon(Icons.delete, color: Colors.red, size: 20),
@@ -568,10 +574,11 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                                 ],
                               ),
                             ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4.0),
-                            child: Text('결제 금액: ₩ ${NumberFormat('#,###').format(round.totalCost)}', style: const TextStyle(fontSize: 16)),
-                          ),
+                          if (round.totalCost > 0)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4.0),
+                              child: Text('결제 금액: ₩ ${NumberFormat('#,###').format(round.totalCost)}', style: const TextStyle(fontSize: 16)),
+                            ),
                           if (round.bankAccount.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 4.0, bottom: 8.0),
@@ -614,13 +621,15 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                               )
                           ],
                         ),
-                        const Divider(height: 24),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Text('인당: ₩ ${NumberFormat('#,###').format(round.costPerPerson)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          ],
-                        )
+                        if (round.totalCost > 0) ...[
+                          const Divider(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Text('인당: ₩ ${NumberFormat('#,###').format(round.costPerPerson)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            ],
+                          )
+                        ]
                       ],
                     ),
                   ),
