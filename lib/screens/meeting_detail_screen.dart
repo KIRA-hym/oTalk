@@ -511,6 +511,11 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                 }
 
                 final round = _rounds[index];
+                
+                if (!canEdit && _rounds.length == 1 && round.totalCost == 0) {
+                  return const SizedBox.shrink();
+                }
+
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
                   child: Padding(
