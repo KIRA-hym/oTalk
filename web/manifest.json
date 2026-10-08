@@ -1,11 +1,11 @@
 {
-    "name": "otalk_app",
-    "short_name": "otalk_app",
+    "name": "서쪽방 모임",
+    "short_name": "서쪽방",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#121212",
+    "theme_color": "#FFC107",
+    "description": "서쪽방 모임 정산 앱",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
