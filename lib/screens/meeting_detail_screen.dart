@@ -472,6 +472,7 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                               context: context,
                               builder: (ctx) => MemberSelectionDialog(
                                 alreadySelectedIds: _currentUniqueAttendees.toList(),
+                                isAdmin: isAdmin,
                               ),
                             );
                             if (selectedMember != null) {
@@ -603,7 +604,10 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                                 onPressed: () async {
                                   final selectedMember = await showDialog<Member>(
                                     context: context,
-                                    builder: (ctx) => MemberSelectionDialog(alreadySelectedIds: round.attendees),
+                                    builder: (ctx) => MemberSelectionDialog(
+                                      alreadySelectedIds: round.attendees,
+                                      isAdmin: isAdmin,
+                                    ),
                                   );
                                   if (selectedMember != null) {
                                     _addAttendeeToRound(index, selectedMember.id);

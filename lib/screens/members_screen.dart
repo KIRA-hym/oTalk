@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:convert';
 import '../models/member.dart';
+import '../models/app_user.dart';
 import '../models/meeting.dart';
 import '../repositories/member_repository.dart';
 import '../repositories/meeting_repository.dart';
@@ -355,9 +356,15 @@ class _MembersScreenState extends State<MembersScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
+          final appUser = Provider.of<AppUser>(context, listen: false);
+          final isAdmin = appUser.role == 'super_admin' || appUser.role == 'admin';
           showDialog(
             context: context,
-            builder: (ctx) => const MemberSelectionDialog(alreadySelectedIds: [], startWithAddingNew: true),
+            builder: (ctx) => MemberSelectionDialog(
+              alreadySelectedIds: const [], 
+              startWithAddingNew: true,
+              isAdmin: isAdmin,
+            ),
           );
         },
         icon: const Icon(Icons.person_add),

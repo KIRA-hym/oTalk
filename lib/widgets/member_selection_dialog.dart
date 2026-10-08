@@ -7,8 +7,14 @@ import '../repositories/member_repository.dart';
 class MemberSelectionDialog extends StatefulWidget {
   final List<String> alreadySelectedIds;
   final bool startWithAddingNew;
+  final bool isAdmin;
 
-  const MemberSelectionDialog({super.key, required this.alreadySelectedIds, this.startWithAddingNew = false});
+  const MemberSelectionDialog({
+    super.key, 
+    required this.alreadySelectedIds, 
+    this.startWithAddingNew = false,
+    this.isAdmin = true, // Default to true or let caller pass it
+  });
 
   @override
   State<MemberSelectionDialog> createState() => _MemberSelectionDialogState();
@@ -40,8 +46,7 @@ class _MemberSelectionDialogState extends State<MemberSelectionDialog> {
   @override
   Widget build(BuildContext context) {
     final memberRepo = Provider.of<MemberRepository>(context, listen: false);
-    final appUser = Provider.of<AppUser>(context, listen: false);
-    final isAdmin = appUser.role == 'super_admin' || appUser.role == 'admin';
+    final isAdmin = widget.isAdmin;
 
     // 일반 사용자가 직접 신규 추가 모달로 열리려 하면 막기 위한 안전장치
     if (!isAdmin && _isAddingNew) {

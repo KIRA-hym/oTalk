@@ -331,9 +331,14 @@ class _MeetingFormSheetState extends State<MeetingFormSheet> {
                           label: const Text('멤버 추가', style: TextStyle(color: Colors.black)),
                           backgroundColor: Colors.amber,
                           onPressed: () async {
+                            final appUser = Provider.of<AppUser>(context, listen: false);
+                            final isAdmin = appUser.role == 'super_admin' || appUser.role == 'admin';
                             final selectedMember = await showDialog<Member>(
                               context: context,
-                              builder: (ctx) => MemberSelectionDialog(alreadySelectedIds: _rounds[0].attendees),
+                              builder: (ctx) => MemberSelectionDialog(
+                                alreadySelectedIds: _rounds[0].attendees,
+                                isAdmin: isAdmin,
+                              ),
                             );
                             if (selectedMember != null) {
                               _addAttendeeToRound(0, selectedMember.id);
