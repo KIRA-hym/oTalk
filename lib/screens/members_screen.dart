@@ -242,7 +242,7 @@ class _MembersScreenState extends State<MembersScreen> {
                       child: TextField(
                         controller: _searchController,
                         decoration: InputDecoration(
-                          hintText: '멤버 검색 (이름, 년생, 지역 등)',
+                          hintText: '멤버 검색 (이름, 성별 등)',
                           prefixIcon: const Icon(Icons.search, color: Colors.grey),
                           suffixIcon: _searchQuery.isNotEmpty 
                             ? IconButton(
