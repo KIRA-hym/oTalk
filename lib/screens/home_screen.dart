@@ -41,14 +41,14 @@ class _HomeScreenState extends State<HomeScreen> {
         const BottomNavigationBarItem(icon: Icon(Icons.settings), label: '설정'),
       ]);
     } else {
-      // 일반 유저 권한 (모임 탭만)
+      // 일반 유저 권한 (모임, 멤버 탭)
       pages.addAll([
-        const MeetingScreen(), // 1번째 탭에 모임 조회 및 관리
-        const Center(child: Text('내 정보')),
+        const MeetingScreen(),
+        const MembersScreen(),
       ]);
       navItems.addAll([
         const BottomNavigationBarItem(icon: Icon(Icons.event), label: '모임'),
-        const BottomNavigationBarItem(icon: Icon(Icons.person), label: '내 정보'),
+        const BottomNavigationBarItem(icon: Icon(Icons.people), label: '멤버'),
       ]);
     }
 
