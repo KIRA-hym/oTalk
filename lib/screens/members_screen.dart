@@ -289,7 +289,7 @@ class _MembersScreenState extends State<MembersScreen> {
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: InkWell(
-                                    onTap: () {
+                                    onTap: isAdmin ? () {
                                       setState(() {
                                         if (_selectedMemberId == member.id) {
                                           _selectedMemberId = null;
@@ -297,7 +297,7 @@ class _MembersScreenState extends State<MembersScreen> {
                                           _selectedMemberId = member.id;
                                         }
                                       });
-                                    },
+                                    } : null,
                                     onLongPress: () {
                                       if (isAdmin) {
                                         showDialog(
@@ -359,7 +359,7 @@ class _MembersScreenState extends State<MembersScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: isAdmin ? FloatingActionButton.extended(
         onPressed: () {
           final appUser = Provider.of<AppUser>(context, listen: false);
           final isAdmin = appUser.role == 'super_admin' || appUser.role == 'admin';
@@ -376,7 +376,7 @@ class _MembersScreenState extends State<MembersScreen> {
         label: const Text('멤버 등록'),
         backgroundColor: Colors.amber,
         foregroundColor: Colors.black,
-      ),
+      ) : null,
     );
   }
 
