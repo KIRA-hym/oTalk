@@ -271,8 +271,6 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
       }
     }
 
-    buffer.writeln('정산 확인 후 "입완" 댓글을 달아주세요.');
-
     return buffer.toString().trim();
   }
 

@@ -8,7 +8,7 @@ import '../models/app_user.dart';
 import '../models/meeting.dart';
 import '../repositories/member_repository.dart';
 import '../repositories/meeting_repository.dart';
-import '../widgets/member_edit_dialog.dart';
+import '../widgets/member_form_dialog.dart';
 import '../widgets/member_selection_dialog.dart';
 import '../sync_data.dart';
 
@@ -75,8 +75,6 @@ class _MembersScreenState extends State<MembersScreen> {
           await docRef.set({
             'id': docRef.id,
             'nickname': nickname,
-            'birthYear': '',
-            'region': '',
             'gender': '',
             'joinDate': Timestamp.now(),
             'manualAttendance': manualAttendance,
@@ -170,8 +168,6 @@ class _MembersScreenState extends State<MembersScreen> {
                     final updatedMember = Member(
                       id: member.id,
                       nickname: member.nickname,
-                      birthYear: member.birthYear,
-                      region: member.region,
                       gender: member.gender,
                       joinDate: member.joinDate,
                       manualAttendance: updatedManual,
@@ -300,7 +296,7 @@ class _MembersScreenState extends State<MembersScreen> {
                                     onLongPress: () {
                                       showDialog(
                                         context: context,
-                                        builder: (ctx) => MemberEditDialog(member: member),
+                                        builder: (ctx) => MemberFormDialog(member: member),
                                       );
                                     },
                                     child: Padding(
@@ -356,15 +352,13 @@ class _MembersScreenState extends State<MembersScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          final appUser = Provider.of<AppUser>(context, listen: false);
-          final isAdmin = appUser.role == 'super_admin' || appUser.role == 'admin';
+          if (!isAdmin) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('권한이 없습니다.')));
+            return;
+          }
           showDialog(
             context: context,
-            builder: (ctx) => MemberSelectionDialog(
-              alreadySelectedIds: const [], 
-              startWithAddingNew: true,
-              isAdmin: isAdmin,
-            ),
+            builder: (ctx) => const MemberFormDialog(),
           );
         },
         icon: const Icon(Icons.person_add),
@@ -414,7 +408,7 @@ class _MembersScreenState extends State<MembersScreen> {
                     onPressed: () {
                       showDialog(
                         context: context,
-                        builder: (ctx) => MemberEditDialog(member: member),
+                        builder: (ctx) => MemberFormDialog(member: member),
                       );
                     },
                     icon: const Icon(Icons.edit, color: Colors.grey, size: 20),

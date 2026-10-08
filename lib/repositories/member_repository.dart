@@ -5,13 +5,11 @@ class MemberRepository {
   final CollectionReference _membersCollection = FirebaseFirestore.instance.collection('members');
 
   // 멤버 추가
-  Future<Member> addMember(String nickname, String birthYear, String region, String gender) async {
+  Future<Member> addMember(String nickname, String gender) async {
     final docRef = _membersCollection.doc();
     final newMember = Member(
       id: docRef.id,
       nickname: nickname,
-      birthYear: birthYear,
-      region: region,
       gender: gender,
       joinDate: DateTime.now(),
     );

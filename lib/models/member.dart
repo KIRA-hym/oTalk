@@ -3,8 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Member {
   final String id;
   final String nickname;
-  final String birthYear; // e.g., '90'
-  final String region; // e.g., '서울'
   final String gender; // e.g., '남' 또는 '여'
   final DateTime joinDate;
   final Map<String, int> manualAttendance; // key: 'YYYY-MM', value: count
@@ -12,8 +10,6 @@ class Member {
   Member({
     required this.id,
     required this.nickname,
-    required this.birthYear,
-    required this.region,
     required this.gender,
     required this.joinDate,
     this.manualAttendance = const {},
@@ -24,8 +20,6 @@ class Member {
     return Member(
       id: doc.id,
       nickname: data['nickname'] ?? '',
-      birthYear: data['birthYear'] ?? '',
-      region: data['region'] ?? '',
       gender: data['gender'] ?? '',
       joinDate: data['joinDate'] is Timestamp 
           ? (data['joinDate'] as Timestamp).toDate() 
@@ -39,8 +33,6 @@ class Member {
   Map<String, dynamic> toFirestore() {
     return {
       'nickname': nickname,
-      'birthYear': birthYear,
-      'region': region,
       'gender': gender,
       'joinDate': Timestamp.fromDate(joinDate),
       'manualAttendance': manualAttendance,
@@ -48,8 +40,8 @@ class Member {
   }
 
   // 검색 시 자동완성 등에서 보여줄 라벨 포맷
-  String get displayName => '$nickname ($birthYear년생, $region, $gender)';
+  String get displayName => '$nickname ($gender)';
   
   // 모임 등록/조회 시 칩에 보여줄 한 줄 표기 포맷
-  String get fullDisplayText => '$nickname $birthYear $region $gender'.trim();
+  String get fullDisplayText => '$nickname $gender'.trim();
 }

@@ -51,8 +51,6 @@ Future<void> _runOneOffSync() async {
         await docRef.set({
           'id': docRef.id,
           'nickname': nickname,
-          'birthYear': '',
-          'region': '',
           'gender': '',
           'joinDate': DateTime.now().toIso8601String(),
           'manualAttendance': manualAttendance,

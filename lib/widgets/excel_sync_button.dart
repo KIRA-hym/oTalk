@@ -55,8 +55,6 @@ class _ExcelSyncButtonState extends State<ExcelSyncButton> {
           await docRef.set({
             'id': docRef.id,
             'nickname': nickname,
-            'birthYear': '',
-            'region': '',
             'gender': '',
             'joinDate': Timestamp.now(), // Use proper Timestamp!
             'manualAttendance': manualAttendance,
