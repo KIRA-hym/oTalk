@@ -58,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 24),
               const Text(
-                'oTalk',
+                '서쪽방 모임',
                 style: TextStyle(
                   fontSize: 48,
                   fontWeight: FontWeight.bold,

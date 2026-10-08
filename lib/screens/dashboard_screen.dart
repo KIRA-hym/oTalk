@@ -60,26 +60,7 @@ class DashboardScreen extends StatelessWidget {
 
               final members = memberSnapshot.data ?? [];
 
-              // 참여왕 계산
-              Member? attendanceKing;
-              int maxAttendance = 0;
 
-              for (var member in members) {
-                // 1. 이번 달 앱 개설 모임 참석 횟수
-                int autoCount = thisMonthMeetings.where((m) => 
-                  m.uniqueAttendees.contains(member.id) || m.uniqueAttendees.contains(member.nickname)
-                ).length;
-                
-                // 2. 수기 입력 이번 달 횟수
-                int manualCount = member.manualAttendance[currentMonthKey] ?? 0;
-                
-                int totalCount = autoCount + manualCount;
-
-                if (totalCount > maxAttendance) {
-                  maxAttendance = totalCount;
-                  attendanceKing = member;
-                }
-              }
 
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(20.0),
@@ -115,65 +96,7 @@ class DashboardScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 32),
                     
-                    // 중단: 이달의 참여왕 (그라데이션 강조)
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.amber.shade400, Colors.amber.shade700],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.amber.withOpacity(0.3),
-                            blurRadius: 15,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.workspace_premium, color: Colors.white, size: 24),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '이달의 참여왕', 
-                                  style: TextStyle(color: Colors.amber.shade50, fontSize: 16, fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            if (attendanceKing != null && maxAttendance > 0) ...[
-                              Text(
-                                attendanceKing.fullDisplayText,
-                                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.black87),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).cardColor,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  '이번 달 총 $maxAttendance회 참석!', 
-                                  style: const TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold)
-                                ),
-                              ),
-                            ] else ...[
-                              Text('이번 달 참석자가 아직 없습니다.', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5), fontSize: 16, fontWeight: FontWeight.bold)),
-                            ]
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+
                     
                     // 중단: 좌우 분할 통계 (이달 총 모임, 이달 총 참여자)
                     Row(

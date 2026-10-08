@@ -54,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('oTalk'),
+        title: const Text('서쪽방 모임'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
