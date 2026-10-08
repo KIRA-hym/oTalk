@@ -52,6 +52,10 @@ class _HomeScreenState extends State<HomeScreen> {
       ]);
     }
 
+    if (_currentIndex >= pages.length) {
+      _currentIndex = 0;
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('서쪽방 모임'),

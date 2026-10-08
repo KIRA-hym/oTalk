@@ -229,7 +229,7 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
       final memberNicknames = round.attendees.map((id) => _memberNicknameMap[id] ?? id).toList();
       buffer.writeln('맴버 : ${memberNicknames.join(', ')}');
       
-      if (!isSameAccount && round.bankAccount.isNotEmpty) {
+      if (!isSameAccount && round.totalCost > 0 && round.bankAccount.isNotEmpty) {
         buffer.writeln('[입금계좌]');
         buffer.writeln(round.bankAccount);
       }
@@ -265,7 +265,7 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
         buffer.writeln();
       }
 
-      if (firstAccount != null && firstAccount.isNotEmpty) {
+      if (firstAccount != null && firstAccount.isNotEmpty && sortedCosts.isNotEmpty) {
         buffer.writeln('[입금계좌]');
         buffer.writeln(firstAccount);
         buffer.writeln();
@@ -579,7 +579,7 @@ class _MeetingDetailScreenState extends State<MeetingDetailScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 4.0),
                               child: Text('결제 금액: ₩ ${NumberFormat('#,###').format(round.totalCost)}', style: const TextStyle(fontSize: 16)),
                             ),
-                          if (round.bankAccount.isNotEmpty)
+                          if (round.totalCost > 0 && round.bankAccount.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 4.0, bottom: 8.0),
                               child: Row(
