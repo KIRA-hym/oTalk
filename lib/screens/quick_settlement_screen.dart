@@ -1,13 +1,9 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../models/meeting.dart';
-import '../models/member.dart';
-import '../repositories/member_repository.dart';
 import '../widgets/quick_member_selection_dialog.dart';
 
 class QuickSettlementScreen extends StatefulWidget {
@@ -20,57 +16,18 @@ class QuickSettlementScreen extends StatefulWidget {
 class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
+  final TextEditingController _attendeeInputController = TextEditingController();
+  final FocusNode _attendeeInputFocusNode = FocusNode();
 
   final List<MeetingRound> _rounds = [];
   final List<TextEditingController> _costControllers = [];
   final List<TextEditingController> _roundLocationControllers = [];
   final List<TextEditingController> _bankControllers = [];
 
-  final Map<String, Member> _membersById = {};
-  final Map<String, String> _memberDisplayMap = {};
-  final Map<String, String> _memberNicknameMap = {};
-
-  StreamSubscription<List<Member>>? _memberSub;
-
   @override
   void initState() {
     super.initState();
     _initFirstRound();
-    _listenFirestoreMembers();
-  }
-
-  void _listenFirestoreMembers() {
-    try {
-      final memberRepo = Provider.of<MemberRepository>(context, listen: false);
-      _memberSub = memberRepo.streamAllMembers().listen(
-        (members) {
-          if (!mounted) return;
-          setState(() {
-            // Keep any custom temporary members added in this session
-            final customMembers = _membersById.values
-                .where((m) => m.id.startsWith('temp_'))
-                .toList();
-
-            _membersById.clear();
-            _memberDisplayMap.clear();
-            _memberNicknameMap.clear();
-
-            for (final m in members) {
-              _membersById[m.id] = m;
-              _memberDisplayMap[m.id] = m.fullDisplayText;
-              _memberDisplayMap[m.nickname] = m.fullDisplayText;
-              _memberNicknameMap[m.id] = m.nickname;
-              _memberNicknameMap[m.nickname] = m.nickname;
-            }
-            for (final cm in customMembers) {
-              _membersById[cm.id] = cm;
-              _memberDisplayMap[cm.id] = cm.fullDisplayText;
-              _memberNicknameMap[cm.id] = cm.nickname;
-            }
-          });
-        },
-      );
-    } catch (_) {}
   }
 
   void _initFirstRound() {
@@ -104,9 +61,10 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
 
   @override
   void dispose() {
-    _memberSub?.cancel();
     _titleController.dispose();
     _locationController.dispose();
+    _attendeeInputController.dispose();
+    _attendeeInputFocusNode.dispose();
     for (final c in _costControllers) {
       c.dispose();
     }
@@ -119,20 +77,6 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
     super.dispose();
   }
 
-  List<Member> get _customMembersList {
-    final list = _membersById.values
-        .where((m) => m.id.startsWith('temp_'))
-        .toList();
-    list.sort((a, b) => a.nickname.compareTo(b.nickname));
-    return list;
-  }
-
-  void _registerMemberSelection(Member member) {
-    _membersById[member.id] = member;
-    _memberDisplayMap[member.id] = member.fullDisplayText;
-    _memberNicknameMap[member.id] = member.nickname;
-  }
-
   Set<String> get _currentUniqueAttendees {
     final attendees = <String>{};
     for (final round in _rounds) {
@@ -141,12 +85,40 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
     return attendees;
   }
 
-  void _registerCustomMember(Member newMember) {
+  void _addTypedAttendeesToRound(int roundIndex, String rawInput) {
+    final names = rawInput
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    if (names.isEmpty) return;
+
     setState(() {
-      _membersById[newMember.id] = newMember;
-      _memberDisplayMap[newMember.id] = newMember.fullDisplayText;
-      _memberNicknameMap[newMember.id] = newMember.nickname;
+      if (_rounds.isEmpty) {
+        _initFirstRound();
+      }
+      final currentAttendees = List<String>.from(_rounds[roundIndex].attendees);
+      for (final name in names) {
+        if (!currentAttendees.contains(name)) {
+          currentAttendees.add(name);
+        }
+      }
+      _rounds[roundIndex] = MeetingRound(
+        roundName: _rounds[roundIndex].roundName,
+        totalCost: _rounds[roundIndex].totalCost,
+        attendees: currentAttendees,
+        location: _rounds[roundIndex].location,
+        bankAccount: _rounds[roundIndex].bankAccount,
+      );
     });
+  }
+
+  void _handleTopAttendeeSubmit() {
+    final text = _attendeeInputController.text.trim();
+    if (text.isEmpty) return;
+    _addTypedAttendeesToRound(0, text);
+    _attendeeInputController.clear();
+    _attendeeInputFocusNode.requestFocus();
   }
 
   void _addRound() {
@@ -228,22 +200,6 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
     });
   }
 
-  void _addAttendeeToRound(int roundIndex, String id) {
-    setState(() {
-      final currentAttendees = List<String>.from(_rounds[roundIndex].attendees);
-      if (!currentAttendees.contains(id)) {
-        currentAttendees.add(id);
-      }
-      _rounds[roundIndex] = MeetingRound(
-        roundName: _rounds[roundIndex].roundName,
-        totalCost: _rounds[roundIndex].totalCost,
-        attendees: currentAttendees,
-        location: _rounds[roundIndex].location,
-        bankAccount: _rounds[roundIndex].bankAccount,
-      );
-    });
-  }
-
   void _removeAttendeeFromRound(int roundIndex, String id) {
     setState(() {
       final currentAttendees = List<String>.from(_rounds[roundIndex].attendees);
@@ -278,6 +234,7 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
     setState(() {
       _titleController.clear();
       _locationController.clear();
+      _attendeeInputController.clear();
       _initFirstRound();
     });
     ScaffoldMessenger.of(context).showSnackBar(
@@ -325,15 +282,17 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
       buffer.writeln('$roundTitle 장소 : $locationStr');
       if (round.totalCost > 0) {
         final costStr = NumberFormat('#,###').format(round.totalCost);
-        final costPerPersonStr = NumberFormat('#,###').format(round.costPerPerson);
-        buffer.writeln('금액 : $costStr / ${round.attendees.length} = $costPerPersonStr');
+        final costPerPersonStr =
+            NumberFormat('#,###').format(round.costPerPerson);
+        buffer.writeln(
+          '금액 : $costStr / ${round.attendees.length} = $costPerPersonStr',
+        );
       }
-      final memberNicknames = round.attendees
-          .map((id) => _memberNicknameMap[id] ?? id)
-          .toList();
-      buffer.writeln('맴버 : ${memberNicknames.join(', ')}');
+      buffer.writeln('맴버 : ${round.attendees.join(', ')}');
 
-      if (!isSameAccount && round.totalCost > 0 && round.bankAccount.trim().isNotEmpty) {
+      if (!isSameAccount &&
+          round.totalCost > 0 &&
+          round.bankAccount.trim().isNotEmpty) {
         buffer.writeln('[입금계좌]');
         buffer.writeln(round.bankAccount.trim());
       }
@@ -345,21 +304,22 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
       for (var round in _rounds) {
         if (round.attendees.isEmpty) continue;
         final costPerPerson = round.costPerPerson;
-        for (var id in round.attendees) {
-          memberTotalCost[id] = (memberTotalCost[id] ?? 0) + costPerPerson;
+        for (var name in round.attendees) {
+          memberTotalCost[name] = (memberTotalCost[name] ?? 0) + costPerPerson;
         }
       }
 
       final Map<int, List<String>> costGroups = {};
-      memberTotalCost.forEach((id, cost) {
+      memberTotalCost.forEach((name, cost) {
         if (cost == 0) return;
         if (!costGroups.containsKey(cost)) {
           costGroups[cost] = [];
         }
-        costGroups[cost]!.add(_memberNicknameMap[id] ?? id);
+        costGroups[cost]!.add(name);
       });
 
-      final sortedCosts = costGroups.keys.toList()..sort((a, b) => b.compareTo(a));
+      final sortedCosts = costGroups.keys.toList()
+        ..sort((a, b) => b.compareTo(a));
       if (sortedCosts.isNotEmpty) {
         for (var cost in sortedCosts) {
           final nicknames = costGroups[cost]!;
@@ -369,7 +329,9 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
         buffer.writeln();
       }
 
-      if (firstAccount != null && firstAccount.isNotEmpty && sortedCosts.isNotEmpty) {
+      if (firstAccount != null &&
+          firstAccount.isNotEmpty &&
+          sortedCosts.isNotEmpty) {
         buffer.writeln('[입금계좌]');
         buffer.writeln(firstAccount);
         buffer.writeln();
@@ -462,51 +424,81 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
                   '모임 인원 (${_currentUniqueAttendees.length}명)',
                   style: const TextStyle(color: Colors.grey, fontSize: 14),
                 ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
+                const SizedBox(height: 8),
+                Row(
                   children: [
-                    ..._currentUniqueAttendees.map(
-                      (id) => Chip(
-                        label: Text(
-                          _memberDisplayMap[id] ?? id,
-                          style: const TextStyle(fontSize: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _attendeeInputController,
+                        focusNode: _attendeeInputFocusNode,
+                        style: const TextStyle(fontSize: 14),
+                        decoration: InputDecoration(
+                          hintText: '참석자 이름 입력 후 엔터 (쉼표로 여러 명 가능)',
+                          isDense: true,
+                          filled: true,
+                          fillColor: const Color(0xFF141414),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey.shade800),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey.shade800),
+                          ),
                         ),
-                        visualDensity: VisualDensity.compact,
-                        onDeleted: () => _removeAttendeeFromAllRounds(id),
+                        onSubmitted: (_) => _handleTopAttendeeSubmit(),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          if (_rounds.isEmpty) _addRound();
-                          final selectedMember = await showDialog<Member>(
-                            context: context,
-                            builder: (ctx) => QuickMemberSelectionDialog(
-                              customMembers: _customMembersList,
-                              alreadySelectedIds: _currentUniqueAttendees.toList(),
-                              onCustomMemberCreated: _registerCustomMember,
-                            ),
-                          );
-                          if (selectedMember != null) {
-                            _registerMemberSelection(selectedMember);
-                            _addAttendeeToRound(0, selectedMember.id);
-                          }
-                        },
-                        icon: const Icon(Icons.add, size: 16),
-                        label: const Text('추가', style: TextStyle(fontSize: 12)),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          minimumSize: const Size(0, 32),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      onPressed: _handleTopAttendeeSubmit,
+                      icon: const Icon(Icons.add, size: 16, color: Colors.black),
+                      label: const Text(
+                        '추가',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        minimumSize: const Size(0, 38),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                     ),
                   ],
                 ),
+                if (_currentUniqueAttendees.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: _currentUniqueAttendees
+                        .map(
+                          (name) => Chip(
+                            label: Text(
+                              name,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            visualDensity: VisualDensity.compact,
+                            onDeleted: () => _removeAttendeeFromAllRounds(name),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
               ],
             ),
           ),
@@ -539,7 +531,8 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       const Text(
                                         '정산 내역 미리보기',
@@ -551,7 +544,11 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
                                       ),
                                       TextButton.icon(
                                         onPressed: _copyToClipboard,
-                                        icon: const Icon(Icons.copy, size: 16, color: Colors.amber),
+                                        icon: const Icon(
+                                          Icons.copy,
+                                          size: 16,
+                                          color: Colors.amber,
+                                        ),
                                         label: const Text(
                                           '복사',
                                           style: TextStyle(color: Colors.amber),
@@ -602,7 +599,11 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
                             ),
                             if (index > 0)
                               IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                  size: 20,
+                                ),
                                 onPressed: () => _removeRound(index),
                               ),
                           ],
@@ -614,19 +615,23 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
                               labelText: '장소',
                               prefixIcon: Icon(Icons.location_on, size: 20),
                             ),
-                            onChanged: (val) => _updateRoundLocation(index, val),
+                            onChanged: (val) =>
+                                _updateRoundLocation(index, val),
                           ),
                           const SizedBox(height: 8),
                         ],
                         TextField(
                           controller: _costControllers[index],
                           keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
                           decoration: const InputDecoration(
                             labelText: '결제 금액 (원)',
                             prefixText: '₩ ',
                           ),
-                          onChanged: (val) => _updateRoundCost(index, int.tryParse(val) ?? 0),
+                          onChanged: (val) =>
+                              _updateRoundCost(index, int.tryParse(val) ?? 0),
                         ),
                         const SizedBox(height: 8),
                         TextField(
@@ -636,7 +641,8 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
                             hintText: '예: 홍길동 국민은행 123-456-7890',
                             prefixIcon: Icon(Icons.account_balance, size: 20),
                           ),
-                          onChanged: (val) => _updateRoundBankAccount(index, val),
+                          onChanged: (val) =>
+                              _updateRoundBankAccount(index, val),
                         ),
                         if (_rounds.length > 1) ...[
                           const SizedBox(height: 12),
@@ -650,30 +656,35 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
                             runSpacing: 8,
                             children: [
                               ...round.attendees.map(
-                                (id) => Chip(
-                                  label: Text(_memberDisplayMap[id] ?? id),
-                                  onDeleted: () => _removeAttendeeFromRound(index, id),
+                                (name) => Chip(
+                                  label: Text(name),
+                                  onDeleted: () =>
+                                      _removeAttendeeFromRound(index, name),
                                 ),
                               ),
                               ActionChip(
-                                avatar: const Icon(Icons.add, size: 16, color: Colors.black),
+                                avatar: const Icon(
+                                  Icons.add,
+                                  size: 16,
+                                  color: Colors.black,
+                                ),
                                 label: const Text(
                                   '추가',
                                   style: TextStyle(color: Colors.black),
                                 ),
                                 backgroundColor: Colors.amber,
                                 onPressed: () async {
-                                  final selectedMember = await showDialog<Member>(
+                                  final typedName = await showDialog<String>(
                                     context: context,
                                     builder: (ctx) => QuickMemberSelectionDialog(
-                                      customMembers: _customMembersList,
-                                      alreadySelectedIds: round.attendees,
-                                      onCustomMemberCreated: _registerCustomMember,
+                                      existingPoolNames:
+                                          _currentUniqueAttendees.toList(),
+                                      alreadySelectedNames: round.attendees,
                                     ),
                                   );
-                                  if (selectedMember != null) {
-                                    _registerMemberSelection(selectedMember);
-                                    _addAttendeeToRound(index, selectedMember.id);
+                                  if (typedName != null &&
+                                      typedName.trim().isNotEmpty) {
+                                    _addTypedAttendeesToRound(index, typedName);
                                   }
                                 },
                               ),
