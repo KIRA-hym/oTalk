@@ -71,7 +71,7 @@ class _QuickMemberSelectionDialogState
                     focusNode: _focusNode,
                     autofocus: true,
                     decoration: InputDecoration(
-                      hintText: '이름/닉네임 입력 (쉼표로 여러 명 가능)',
+                      hintText: '이름/닉네임 입력 (띄어쓰기·쉼표로 여러 명 가능)',
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 14,

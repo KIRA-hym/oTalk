@@ -87,7 +87,7 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
 
   void _addTypedAttendeesToRound(int roundIndex, String rawInput) {
     final names = rawInput
-        .split(',')
+        .split(RegExp(r'[,\s]+'))
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
         .toList();
@@ -433,7 +433,7 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
                         focusNode: _attendeeInputFocusNode,
                         style: const TextStyle(fontSize: 14),
                         decoration: InputDecoration(
-                          hintText: '참석자 이름 입력 후 엔터 (쉼표로 여러 명 가능)',
+                          hintText: '참석자 입력 후 엔터 (띄어쓰기·쉼표로 여러 명 가능)',
                           isDense: true,
                           filled: true,
                           fillColor: const Color(0xFF141414),
