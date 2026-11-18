@@ -15,6 +15,7 @@ import 'repositories/auth_repository.dart';
 import 'repositories/user_repository.dart';
 import 'screens/login_screen.dart';
 import 'screens/pending_screen.dart';
+import 'screens/quick_settlement_screen.dart';
 import 'models/app_user.dart';
 
 import 'dart:convert';
@@ -78,6 +79,18 @@ void main() async {
 class OTalkApp extends StatelessWidget {
   const OTalkApp({super.key});
 
+  bool get _isQuickSettleRoute {
+    final uri = Uri.base;
+    final path = uri.path.toLowerCase();
+    final fragment = uri.fragment.toLowerCase();
+    final defaultRoute =
+        WidgetsBinding.instance.platformDispatcher.defaultRouteName.toLowerCase();
+    return path.contains('/settle') ||
+        fragment.contains('settle') ||
+        defaultRoute.contains('settle') ||
+        uri.queryParameters['mode'] == 'settle';
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -125,7 +138,30 @@ class OTalkApp extends StatelessWidget {
             supportedLocales: const [
               Locale('ko', 'KR'),
             ],
-            home: const AuthWrapper(),
+            onGenerateInitialRoutes: (initialRouteName) {
+              if (_isQuickSettleRoute ||
+                  initialRouteName.toLowerCase().contains('settle')) {
+                return [
+                  MaterialPageRoute(builder: (_) => const QuickSettlementScreen()),
+                ];
+              }
+              return [
+                MaterialPageRoute(builder: (_) => const AuthWrapper()),
+              ];
+            },
+            onGenerateRoute: (settings) {
+              final routeName = (settings.name ?? '').toLowerCase();
+              if (_isQuickSettleRoute || routeName.contains('settle')) {
+                return MaterialPageRoute(
+                  builder: (_) => const QuickSettlementScreen(),
+                  settings: settings,
+                );
+              }
+              return MaterialPageRoute(
+                builder: (_) => const AuthWrapper(),
+                settings: settings,
+              );
+            },
           );
         },
       ),
