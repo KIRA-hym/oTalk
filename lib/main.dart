@@ -79,7 +79,7 @@ void main() async {
 class OTalkApp extends StatelessWidget {
   const OTalkApp({super.key});
 
-  bool get _isQuickSettleRoute {
+  static bool get isQuickSettleRoute {
     final uri = Uri.base;
     final path = uri.path.toLowerCase();
     final fragment = uri.fragment.toLowerCase();
@@ -139,7 +139,7 @@ class OTalkApp extends StatelessWidget {
               Locale('ko', 'KR'),
             ],
             onGenerateInitialRoutes: (initialRouteName) {
-              if (_isQuickSettleRoute ||
+              if (isQuickSettleRoute ||
                   initialRouteName.toLowerCase().contains('settle')) {
                 return [
                   MaterialPageRoute(builder: (_) => const QuickSettlementScreen()),
@@ -151,7 +151,7 @@ class OTalkApp extends StatelessWidget {
             },
             onGenerateRoute: (settings) {
               final routeName = (settings.name ?? '').toLowerCase();
-              if (_isQuickSettleRoute || routeName.contains('settle')) {
+              if (isQuickSettleRoute || routeName.contains('settle')) {
                 return MaterialPageRoute(
                   builder: (_) => const QuickSettlementScreen(),
                   settings: settings,
@@ -174,6 +174,9 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (OTalkApp.isQuickSettleRoute) {
+      return const QuickSettlementScreen();
+    }
     final authRepo = Provider.of<AuthRepository>(context, listen: false);
 
     return StreamBuilder<User?>(

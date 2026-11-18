@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -9,7 +8,6 @@ import 'package:share_plus/share_plus.dart';
 import '../models/meeting.dart';
 import '../models/member.dart';
 import '../repositories/member_repository.dart';
-import '../sync_data.dart';
 import '../widgets/quick_member_selection_dialog.dart';
 
 class QuickSettlementScreen extends StatefulWidget {
@@ -37,29 +35,8 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
   @override
   void initState() {
     super.initState();
-    _initFallbackMembers();
     _initFirstRound();
     _listenFirestoreMembers();
-  }
-
-  void _initFallbackMembers() {
-    try {
-      final Map<String, dynamic> data = jsonDecode(excelSyncJson);
-      final names = data.keys.toList()..sort();
-      for (final nickname in names) {
-        final id = 'preset_$nickname';
-        final m = Member(
-          id: id,
-          nickname: nickname,
-          gender: '',
-          memo: '',
-          joinDate: DateTime.now(),
-        );
-        _membersById[id] = m;
-        _memberDisplayMap[id] = m.fullDisplayText;
-        _memberNicknameMap[id] = m.nickname;
-      }
-    } catch (_) {}
   }
 
   void _listenFirestoreMembers() {
@@ -67,7 +44,7 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
       final memberRepo = Provider.of<MemberRepository>(context, listen: false);
       _memberSub = memberRepo.streamAllMembers().listen(
         (members) {
-          if (!mounted || members.isEmpty) return;
+          if (!mounted) return;
           setState(() {
             // Keep any custom temporary members added in this session
             final customMembers = _membersById.values
@@ -91,9 +68,6 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
               _memberNicknameMap[cm.id] = cm.nickname;
             }
           });
-        },
-        onError: (_) {
-          // 비로그인 상태에서 Firestore 보안 규칙으로 차단된 경우 기본 내장 멤버 목록 유지
         },
       );
     } catch (_) {}
@@ -145,10 +119,18 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
     super.dispose();
   }
 
-  List<Member> get _sortedAllMembers {
-    final list = _membersById.values.toList();
+  List<Member> get _customMembersList {
+    final list = _membersById.values
+        .where((m) => m.id.startsWith('temp_'))
+        .toList();
     list.sort((a, b) => a.nickname.compareTo(b.nickname));
     return list;
+  }
+
+  void _registerMemberSelection(Member member) {
+    _membersById[member.id] = member;
+    _memberDisplayMap[member.id] = member.fullDisplayText;
+    _memberNicknameMap[member.id] = member.nickname;
   }
 
   Set<String> get _currentUniqueAttendees {
@@ -504,12 +486,13 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
                           final selectedMember = await showDialog<Member>(
                             context: context,
                             builder: (ctx) => QuickMemberSelectionDialog(
-                              allMembers: _sortedAllMembers,
+                              customMembers: _customMembersList,
                               alreadySelectedIds: _currentUniqueAttendees.toList(),
                               onCustomMemberCreated: _registerCustomMember,
                             ),
                           );
                           if (selectedMember != null) {
+                            _registerMemberSelection(selectedMember);
                             _addAttendeeToRound(0, selectedMember.id);
                           }
                         },
@@ -683,12 +666,13 @@ class _QuickSettlementScreenState extends State<QuickSettlementScreen> {
                                   final selectedMember = await showDialog<Member>(
                                     context: context,
                                     builder: (ctx) => QuickMemberSelectionDialog(
-                                      allMembers: _sortedAllMembers,
+                                      customMembers: _customMembersList,
                                       alreadySelectedIds: round.attendees,
                                       onCustomMemberCreated: _registerCustomMember,
                                     ),
                                   );
                                   if (selectedMember != null) {
+                                    _registerMemberSelection(selectedMember);
                                     _addAttendeeToRound(index, selectedMember.id);
                                   }
                                 },

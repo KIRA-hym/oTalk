@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/member.dart';
+import '../repositories/member_repository.dart';
 
 class QuickMemberSelectionDialog extends StatefulWidget {
-  final List<Member> allMembers;
+  final List<Member> customMembers;
   final List<String> alreadySelectedIds;
   final void Function(Member newCustomMember) onCustomMemberCreated;
 
   const QuickMemberSelectionDialog({
     super.key,
-    required this.allMembers,
+    required this.customMembers,
     required this.alreadySelectedIds,
     required this.onCustomMemberCreated,
   });
@@ -104,17 +106,7 @@ class _QuickMemberSelectionDialogState extends State<QuickMemberSelectionDialog>
 
   @override
   Widget build(BuildContext context) {
-    final availableMembers = widget.allMembers
-        .where((m) => !widget.alreadySelectedIds.contains(m.id))
-        .toList();
-
-    final filtered = availableMembers.where((m) {
-      if (_searchQuery.isEmpty) return true;
-      final q = _searchQuery.toLowerCase();
-      return m.nickname.toLowerCase().contains(q) ||
-          m.memo.toLowerCase().contains(q) ||
-          m.fullDisplayText.toLowerCase().contains(q);
-    }).toList();
+    final memberRepo = Provider.of<MemberRepository>(context, listen: false);
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -164,8 +156,36 @@ class _QuickMemberSelectionDialogState extends State<QuickMemberSelectionDialog>
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: filtered.isEmpty
-                  ? Center(
+              child: StreamBuilder<List<Member>>(
+                stream: memberRepo.streamAllMembers(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting &&
+                      !snapshot.hasData) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: Colors.amber),
+                    );
+                  }
+
+                  final dbMembers = snapshot.data ?? [];
+                  final mergedMembers = <Member>[
+                    ...widget.customMembers,
+                    ...dbMembers,
+                  ];
+
+                  final availableMembers = mergedMembers
+                      .where((m) => !widget.alreadySelectedIds.contains(m.id))
+                      .toList();
+
+                  final filtered = availableMembers.where((m) {
+                    if (_searchQuery.isEmpty) return true;
+                    final q = _searchQuery.toLowerCase();
+                    return m.nickname.toLowerCase().contains(q) ||
+                        m.memo.toLowerCase().contains(q) ||
+                        m.fullDisplayText.toLowerCase().contains(q);
+                  }).toList();
+
+                  if (filtered.isEmpty) {
+                    return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -194,20 +214,24 @@ class _QuickMemberSelectionDialogState extends State<QuickMemberSelectionDialog>
                           ),
                         ],
                       ),
-                    )
-                  : ListView.builder(
-                      itemCount: filtered.length,
-                      itemBuilder: (context, index) {
-                        final m = filtered[index];
-                        return ListTile(
-                          title: Text(m.fullDisplayText),
-                          trailing: const Icon(Icons.add_circle_outline, color: Colors.amber),
-                          onTap: () {
-                            Navigator.pop(context, m);
-                          },
-                        );
-                      },
-                    ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final m = filtered[index];
+                      return ListTile(
+                        title: Text(m.fullDisplayText),
+                        trailing: const Icon(Icons.add_circle_outline, color: Colors.amber),
+                        onTap: () {
+                          Navigator.pop(context, m);
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),
